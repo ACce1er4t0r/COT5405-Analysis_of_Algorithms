@@ -1,0 +1,300 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\lstset{
+  basicstyle=\footnotesize,
+  numbers=left, 
+  stepnumber=1, 
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=single,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+}
+
+\usepackage{pgfplots}
+
+\usepackage{algorithm}  
+\usepackage{algorithmicx}  
+\usepackage{algpseudocode}  
+\usepackage{amsmath}  
+  
+\floatname{algorithm}{algorithm}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}  
+\renewcommand{\algorithmicensure}{\textbf{Output:}}  
+
+\title{Assignment 1}
+\author{Name: Shiyin Lin \\UFID: 49619012}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Cycle Finding}
+\subsection{Pseudo-code}
+\begin{algorithm}
+    \caption{Disjoint-set data structure}
+    \begin{algorithmic}[1] 
+        \Require $Array$\ Edges  
+        \Ensure bool
+        \Function{DSU}{$Array$}
+            \If {$x$ is not already in the forest}  
+                \State $x.patent := x$
+            \EndIf
+            \For{each $edge$ in Edges}
+                \State $pf := $\Call{Find}{edge.fr}
+                \State $pt := $\Call{Find}{edge.to}
+                \If {$pf = pt$}
+                    \State $Find\ cycle$
+                    \State \Return{$true$}
+                \EndIf
+                \State $y.parent := x$
+            \EndFor
+            \State $No\ cycle$
+            \State \Return{$false$}
+        \EndFunction
+        \State  
+        \Function{Find}{$x$} is 
+            \While{$x.parent \neq x$}
+                \State $(x, x.parent) := (x.parent, x.parent.parent)$  
+            \EndWhile  
+            \State \Return{$x$}  
+        \EndFunction
+    \end{algorithmic}  
+\end{algorithm} 
+\subsection{Proof of Correctness}
+Assume\ the\ edge's\ node x and node y are in the set but cannot form a cycle.\\
+node x and node y are in the set\\
+$\Rightarrow$node x is connected to node y\\
+node x and node y cannot form a cycle\\
+$\Rightarrow$No edge contains node x and node y\\
+$\Rightarrow$contradiction\\
+$\Rightarrow$node x and node y in the set can form a cycle
+
+\subsection{Algorithm's running time}
+When initializing the parent array, the loop is $n$ times, and the complexity is $\Theta(n)$. If the lookup path contains $s$ nodes, it is obvious that the time complexity of the lookup is $\Theta(s)$. The time complexity of the find(a) and union(a) operation can be proven to be $\Theta(\alpha(n))$ if no node's potential energy increases due to optimization using path compression and at least $s-\alpha(n)$ nodes have their potential energy reduced by at least 1. So the total cost is $\Theta(n)+\Theta(\alpha(n))$
+
+
+\subsection{Implement}
+\subsubsection{Graph Generator}
+\begin{lstlisting}
+func generateUndirected(nnum int, enum int) graph.Undirected {
+    r := rand.New(rand.NewSource(time.Now().Unix())
+    return graph.GnmUnidirected(nnum, enum, r)
+}
+
+func generateEdges(g graph.Undirected) [][]int {
+    edgeCollect := [][]int
+    for fr, to := range g.AdjacencyList {
+        for _, to := range to {
+            if graph.NI(fr) < to {
+                tmp := []int{}
+                tmp = append(tmp, fr)
+                tmp = append(tmp, int(to))
+                edgeCollect = append(edgeCollect, tmp)
+            }
+        }
+    }
+    return edgeCollect
+}
+\end{lstlisting}
+
+\subsubsection{Test Code}
+\begin{lstlisting}
+func Test() {
+    nodes := 10000000
+    edges := 20000000
+    g := generateUndirected(nodes, edges)
+    edgeCollect := generateEdges(g)
+    start := time.Now()
+    FindCycleDSU(edgeCollect)
+    elapsed := time.Since(start)
+    fmt.Println("total cost:", elapsed)
+}
+\end{lstlisting}
+
+\subsubsection{Test algorithm for increasing graph size}
+\begin{tabular}{cccccc}
+\hline
+Node & Edge & t1 & t2 & t3 & ave\\
+\hline
+10 & 20 & 25.025$\mu s$ & 25.826$\mu s$ & 26.6$\mu s$ &  25.817$\mu s$ \\
+\hline
+100 & 200 &  24.165$\mu s$ & 26.877$\mu s$ & 27.149$\mu s$ & 26.064$\mu s$ \\
+\hline
+1000 & 2000 &  34.612$\mu s$ & 32.773$\mu s$ & 33.821$\mu s$ & 33.735$\mu s$ \\
+\hline
+10000 & 20000 &  97.649$\mu s$ & 111.776$\mu s$ & 98.966 $\mu s$ & 102.797$\mu s$ \\
+\hline
+100000 & 200000 & 508.58$\mu s$ & 452.34$\mu s$ & 629.028$\mu s$ & 529.983$\mu s$ \\
+\hline
+1000000 & 2000000 & 7.098$ms$ & 8.127$ms$ & 8.371$ms$ & 7.865$ms$ \\
+\hline
+10000000 & 20000000 & 114.545$ms$ & 109.498$ms$ & 95.398$ms$ & 106.48$ms$ \\
+\hline
+\end{tabular}
+
+\subsubsection{Plot running time}
+\begin{tikzpicture}
+\begin{axis}
+\addplot+[sharp plot]
+coordinates{ (0, 25.817) (1, 26.064) (2, 33.735) (3, 102.797) (4, 529.983) (5, 7865) (6, 106480) };
+\end{axis}
+\end{tikzpicture}
+
+\newpage
+\section{Minimum Spanning Tree for sparse graphs}
+\subsection{Pseudo-code}
+\begin{algorithm}
+\caption{Kruskal}
+    \begin{algorithmic}[1]
+        \Require $Int$\ numOfNodes, $Int$\ numOfEdges, $Array$\ EdgesWithWright
+        \Ensure $Null$
+        \Function{Kruskal}{$Int, Int, Array$}
+            \If {$node$ is not already in the forest}  
+                \State $node.patent := node$
+            \EndIf
+            \State \Call{QuicksSore}{Edges}
+            \While{$i < $ numOfEdges}
+                \State $pf := $\Call{Find}{edge[i].fr}
+                \State $pt := $\Call{Find}{edge[i].to}
+                \If {$pf \neq pt$}
+                    \State  $pt.parent = pf$
+                    \State $resault += edge.weight$
+                \EndIf
+            \EndWhile
+            \If {not $result$}
+                \State $Can't\ find\ MST$
+            \Else
+                \State $MST\ is:\ result$
+            \EndIf
+        \EndFunction
+    \end{algorithmic} 
+\end{algorithm} 
+
+\subsection{Proof of Correct}
+Suppose that the graph $G$ has $n$ vertices, then the spanning tree must have $n-1$ edges. Since the number of spanning trees of a graph is finite, there is at least one tree with minimum cost, which is assumed to be $U$. First make the following assumptions.\\
+
+1) The output tree is $T$.\\
+
+2) The number of different edges in $U$ and $T$ is $k$, and the other $n-1-k$ edges are the same, and these $n-1-k$ edges form the edge set $E$.\\
+
+3) The edges in $T$ but not in $U$ are $a_1, a_2, ...$ in order of cost from smallest to largest. , $a_k$.\\
+
+4) The edges in $U$ but not in $T$ are $x_1, x_2, ...$ in order of cost from smallest to largest. , $x_k$.\\
+
+By converting $U$ to $T$ (moving the edges of $T$ into $U$ in order), to prove that $U$ and $T$ have the same cost.\\
+
+First, we move $a_1$ into $U$. Since $U$ itself is a tree, adding any edge at this point constitutes a cycle, so the addition of $a_1$ must produce a cycle, and this cycle must include the edges in $x_1, x_2, ... , x_k. , x_k.$ (Otherwise $a_1$ and the edges in $E$ form a cycle, and $E$ is also in $T$, which contradicts the absence of a cycle in $T$.)\\
+
+In this cycle delete edges belonging to $x_1, x_2, ... , x_k$ and the most costly edge $x_i$ forms a new spanning tree $V$.\\
+
+Assuming that $a_1$ cost is less than $x_i$, the cost of $V$ is less than $U$. This contradicts that $U$ is a minimum cost tree, so $a_1$ cannot be less than $x_i$.\\
+Assuming that $a_1$ is greater than $x_i$, according to Kruskal's algorithm, the edge with small cost is considered first, then when Kruskal's algorithm is executed, $x_i$ should be considered before $a_1$, which in turn is considered before $a_2, ... , a_k$ before considering $x_i$, so before considering $x_i$, the edges in $T$ can only be edges in $E$. And since $x_i$ did not join the tree $T$, it means that $x_i$ must constitute a cycle with some edges in $E$. But $x_i$ and $E$ are in $U$ at the same time, which contradicts with $U$ being a spanning tree, so $a_1$ cannot be larger than $x_i$ either.\\
+
+Therefore, the newly obtained tree $V$ has the same cost as $T$.\\
+
+By analogy, adding the edges of $a_1, a_2, ... ,$ the edges of $a_k$ are gradually added to $U$, and the final obtained tree $T$ has the same cost as $U$.
+
+\subsection{Algorithm's running time}
+Since the algorithm is optimized using the DSU of path compression, the complexity is $\Theta(n)+\Theta(\alpha(n))$, and since it contains a quick sort operation, the consultation complexity is $\Theta(n)+\Theta(\alpha(n))+\Theta(mlogm)$
+
+\subsection{Implement}
+\subsubsection{Graph Generator}
+\begin{lstlisting}
+func generateConnectGraph(nnum int, enum int) graph.Undirected {
+    n, _ := rand2.Int(rand2.Reader, big.NewInt(65536) 
+	r := rand.New(rand.NewSource(n.Int64()))
+	g := graph.GnmUndirected(nnum, enum, r)
+	if !g.IsConnected() {
+		generateConnectGraph(nnum, enum)
+	}
+	return g
+}
+
+func generateWEdges(g graph.Undirected, enum int) [][]int {
+	weight := make([]int, enum)
+
+	for i := 0; i < enum; i++  {
+		n, _ := rand2.Int(rand2.Reader, big.NewInt(int64(20)))
+		if n.Int64() == 0 {
+			weight[i] = int(n.Int64()) + 1
+		} else {
+			weight[i] = int(n.Int64())
+		}
+	}
+	edgeCollect := [][]int{}
+	for fr, to := range g.AdjacencyList {
+		for _, to := range to {
+			if graph.NI(fr) < to {
+				tmp := []int{}
+				tmp = append(tmp, fr)
+				tmp = append(tmp, int(to))
+				edgeCollect = append(edgeCollect, tmp)
+			}
+		}
+	}
+	for i:=0; i<enum; i++ {
+		edgeCollect[i] = append(edgeCollect[i], weight[i])
+	}
+	return edgeCollect
+}
+\end{lstlisting}
+\subsubsection{Test Code}
+\begin{lstlisting}
+func Test2() {
+	nodes := 10
+	edges := 18
+	if edges < nodes-1 {
+		fmt.Println("too less edges")
+		os.Exit(-1)
+	}
+	g := generateConnectGraph(nodes, edges)
+	edgeCollect := generateWEdges(g, edges)
+	fmt.Println(edgeCollect)
+	sort.Slice(edgeCollect[:edges], func(i,j int) bool {
+		return edgeCollect[i][2] < edgeCollect[j][2]
+	})
+	fmt.Println(edgeCollect)
+	start := time.Now()
+	kruskal(nodes, edges, edgeCollect)
+	elapsed := time.Since(start)
+	fmt.Println("total cost:", elapsed)
+}
+\end{lstlisting}
+
+\subsubsection{Test algorithm for increasing graph size}
+\begin{tabular}{cccccc}
+\hline
+Node & Edge & t1 & t2 & t3 & ave\\
+\hline
+10 & 18 & 4.048$\mu s$ & 3.732$\mu s$ & 5.301$\mu s$ &  4.36$\mu s$ \\
+\hline
+20 & 28 &  5.059$\mu s$ & 5.263$\mu s$ & 5.503$\mu s$ & 5.275$\mu s$ \\
+\hline
+30 & 38 &  5.912$\mu s$ & 6.125$\mu s$ & 5.426$\mu s$ & 5.821$\mu s$ \\
+\hline
+40 & 48 &  5.534$\mu s$ & 6.11$\mu s$ & 6.466$\mu s$ & 6.037$\mu s$ \\
+\hline
+50 & 58 & 9.591$\mu s$ & 9.011$\mu s$ & 9.313$\mu s$ & 9.305$\mu s$ \\
+\hline
+60 & 68 & 9.369$\mu s$ & 9.515$\mu s$ & 9.561$\mu s$ & 9.482$\mu s$ \\
+\hline
+70 & 78 & 10.076$\mu s$ & 11.741$\mu s$ & 12.044$\mu s$ & 11.287$\mu s$ \\
+\hline
+\end{tabular}
+
+\subsubsection{Plot running time}
+\begin{tikzpicture}
+\begin{axis}
+\addplot+[sharp plot]
+coordinates{ (0, 4.36) (1, 5.275) (2, 5.821) (3, 6.037) (4, 9.305) (5, 9.482) (6, 11.287) };
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

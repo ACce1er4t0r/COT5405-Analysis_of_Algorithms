@@ -1,0 +1,225 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\lstset{
+  basicstyle=\footnotesize,
+  numbers=left, 
+  stepnumber=1, 
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=single,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+}
+
+\usepackage{pgfplots}
+
+\usepackage{algorithm}  
+\usepackage{algorithmicx}  
+\usepackage{algpseudocode}  
+\usepackage{amsmath}  
+\usepackage{amssymb}
+  
+\floatname{algorithm}{algorithm}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}  
+\renewcommand{\algorithmicensure}{\textbf{Output:}}  
+
+\title{AOA midterm}
+\author{Name: Shiyin Lin \\UFID: 49619012}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Coin Change}
+\subsection{Pseudo-code}
+\begin{algorithm}
+    \caption{CoinChange}
+    \begin{algorithmic}[1] 
+        \Require $float$\ money  
+        \Ensure $int$\ NumOfCoin, $Array$\ changes
+        \Function{CoinChange}{$float$ money}
+            \State $Coins$ := \{100, 50, 20, 10, 5, 1, 0.25, 0.10, 0.05, 0.01\}
+            \State $Changes$ := \{\}
+            \For{each $x$ in $Coins$}
+                \While{money \textgreater\ $x$}
+                    \State $tmp$ := 0
+                    \State $tmp$ = money / $x$
+                    \State money = money % $x$
+                    \State $NumOfCoin$ += $tmp$
+                    \State $changes$ = \Call{append}{$changes$, \{$x$\} * $tmp$}
+                \EndWhile
+            \EndFor
+            \If {money $\neq\ 0$}
+                \State $NumOfCoin$\ =\ -1
+                \State $changes$ = \{\}
+                \State \Return{$NumOfCoin$, $changes$}
+            \EndIf
+            \State \Return{$NumOfCoin$, $changes$}
+        \EndFunction
+    \end{algorithmic}  
+\end{algorithm} 
+\clearpage
+\subsection{Proof of Correctness}
+Set the denomination of the dollar is $c_0, c_1, c_2, ... , c_k$\\
+The change method can be expressed by the following formula
+$$
+m_0c_0 + m_1c_1 + … + m_kc_k = S
+$$
+$m_i =\ $number of dollars of each denomination\\
+$c_i =\ $the face value of the dollar\\
+$S =\ $total amount\\
+Assume there is a non-greedy algorithm for the optimal change solution 
+$$S_1 = m_0c_0 + m_1c_1 + ... + m_kc_k$$ 
+and a greedy algorithm for the change solution 
+$$S_2 = n_0c_0 + n_1c_1 + ... + n_kc_k$$
+Assume that starting from $k$, up to $x(x <= k)$ corresponding to the face value of the dollar, $m_x \neq n_x$\\
+Because the greedy algorithm uses the largest denomination of dollars possible to make change each time, so $n_x > m_x$ (because the change solution for $S_2$ is different from $S_1$, there must be such an x that satisfies the condition)\\
+Consider the minimum case, $n_x - m_x = 1$
+$$
+1c_k = c_0 + (c-1)c_0 + (c-1)c_1 + … + (c-1)c_{k-1} > (c-1)c_0 + (c-1)c_1 + … + (c-1)c_{k-1}
+$$
+In $S_1$'s change solution, $m(m < k)$ cannot be greater than or equal to $c$ (because when $m_x > c$, it is necessary to replace $c$ $m_x$ with a higher denomination)
+$$
+S_1 = m_0c_0 + m_1c_1 + … + m_kc_{k-1} <= (c-1)c_0 + (c-1)c_1 + … + (c-1)c_{k-1} < 1c_k
+$$
+The sum of the remaining dollar denominations in $S_1$ that are less than $c_k$, and will not be greater than the denomination of one $c_k$\\
+$\Rightarrow$Contradiction\\
+$\Rightarrow$S1 not exist, so the Greedy algorithm is the optimal solution
+
+\subsection{Algorithm's running time}
+In the dollar change problem of the greedy algorithm, the worst case is (dollar value n)/(minimum denomination), i.e., the worst case is O(100n) = $O(n)$
+\clearpage
+
+\section{Find Depth & Find Longest Path}
+\subsection{Pseudo-code}
+\begin{algorithm}
+    \caption{Find Depth \& Find Longest Path}
+    \begin{algorithmic}[1] 
+        \Require $Array$\ Tree 
+        \Ensure $int$\ Depth or $int$\ LongestPath and $Array$ Seq
+        \Function{FindDepth}{$Array$ Tree}
+            \If {Tree $= null$} \State \Return{0}
+            \EndIf
+            \State left, right := FindDepth(Tree.left), FindDepth(Tree.right)
+            \If left > right
+                \State Depth = left + 1
+                \State Seq = Append(Seq, Tree.left.Weight)
+            \Else
+                \State Depth = right + 1
+                \State Seq = Append(Seq, Tree.right.Weight)
+            \EndIf
+            \State \Return{Depth, Seq}
+        \EndFunction
+        \State
+        \Function{FindLongestPath}{$Array$ Tree}
+            \If {Tree $= null$}
+                \State \Return{0}
+            \EndIf
+            \State left, right := FindDepth(Tree.left), FindDepth(Tree.right)
+            \State // The difference between find max depth and find longest path is that 
+            \State // the maximum depth is increasing the depth one layer at a time, and 
+            \State // the longest path is increasing the weight of the node at a time.
+            \If left > right
+                \State LongestPath = left + Tree.left.Weight
+                \State Seq = Append(Seq, Tree.left.Weight)
+            \Else
+                \State LongestPath = right + Tree.right.Weight
+                \State Seq = Append(Seq, Tree.right.Weight)
+            \EndIf
+            \State \Return{LongestPath, Seq}
+        \EndFunction
+    \end{algorithmic}  
+\end{algorithm} 
+\clearpage
+\subsection{Proof of Correctness}
+\textbf{Inductive method}\\
+We can simply set that $F(n)$ is the depth of node $n$ ($F(0)$ is the root node), then the depth of node $n+1$ can be simply introduced as $F(n) = F(n+1)+1$; for the longest path, then $F(n)$ is the longest path from the leaf node to node $n$, and simply introduce $F(n) = F(n+1)+n.weight$.\\
+\textbf{Initialization}\\
+From the root node, iterate over the left and right child nodes\\
+\textbf{Recursive}\\
+For the nth node, iterate over the left and right child nodes. For the maximum depth, take $the larger value + 1$; for the longest path, take $the larger value + node.weight$ and return the value which is the left or right value of the $n-1$ node.\\
+\textbf{Recursive termination condition}\\
+Node is null, return 0\\
+\subsection{Algorithm's running time}\\
+Due to the use of depth-first search traversing the entire binary tree, assuming that the tree has n nodes, the complexity is $O(n)$
+
+\clearpage
+\section{Dichotomous search}
+\subsection{Pseudo-code}
+\begin{algorithm}
+    \caption{DichotomousSearch}
+    \begin{algorithmic}[1] 
+        \Require $Array$\ array
+        \Ensure $int$\ MaxNum
+        \Function{DichotomousSearch}{$Array$\ array}
+            \State $start, end$ := 0, len(array) - 1
+            \While{$start < end$}
+                \State $mid = (start + end) / 2$
+                \If {array[$mid$] $<$ array[$end$]}
+                    \State $end = mid$
+                \Else
+                    \State $start = mid$
+                \EndIf
+            \EndWhile
+            \State MaxNum = array[$start$]
+            \State \Return{MaxNum}
+        \EndFunction
+        
+    \end{algorithmic}  
+\end{algorithm} 
+\clearpage
+\subsection{Proof of Correctness}
+\textbf{Cyclic invariants}\\
+The subarray $A[start, end]$ must contain the maximum value, which can be understood as:\\
+1. the search range $[start, end]$ is not empty, i.e. $low <= high$\\
+2. all elements in the left side of the search range (i.e., within the range $[start0, start-1]$) are less than the maximum value, where $start0$ is the initial value of $start$\\
+3. all elements on the right side of the search range (i.e., within the range $[end+1, end0]$) are less than the maximum value, where $end0$ is the initial value of $end$\\
+\textbf{Initialization}\\
+Initialize the array to the whole array, the search range is $[start0, end0]$, at this time both sides of the search range are the empty set.\\
+\textbf{Iteration}\\
+Suppose the invariant holds in the nth iteration, then in the n+1st iteration, if\\
+1. $A[mid] < A[end]$, then $end=mid$ and all elements in $[mid+1, end0]$ are smaller than $A[mid]$, while the right search range remains the same, then the invariant is valid\\
+2. $A[mid] > A[end]$, then $start=mid$, all elements in $[start0, mid-1]$ are smaller than $A[mid]$, while the left search range remains unchanged, then the invariant is valid.\\
+\textbf{Termination Conditions}\\
+1. when $start = end$, there is only one number in the array $A[start, end]$, which is the maximum value\\
+2. when $start > end$, the array $A[start, end]$ is empty and the whole array is outside the array, according to the invariant, there is no such case
+
+\subsection{Algorithm's running time}
+There are n elements in total, and the size of the interval for each lookup is $n, n/2, n/4, ..., n/2^k$ , where k is the number of cycles.\\
+Since $n/2^k$ is rounded $>= 1$, i.e., let $n/2^k = 1$.\\
+$k=log2n$, so the time complexity can be expressed as $O(logn)$
+
+\clearpage
+\section{BONUS}
+Suppose the array of currency denominations is a[...] (arranged from small to large)\\
+First of all, the simplest mathematical derivation leads to the fact that when the previous currency denomination is a multiple of the latter, it satisfies $a[i]*n = a[i+1]$, which is a sure way to satisfy the greedy algorithm.\\
+But this is only a sufficient condition, that is, satisfying this requirement must be able to use greedy, but the greedy case is not only this condition. Take the case of 20 and 50 dollar denominations, for example, they are not multiples, but they can satisfy the greedy algorithm.\\
+For this case where there is no multiplicative relationship, the condition should be satisfied that for $a[i] < a[i+1]$, we must be able to find an integer $k_i>=1$ that satisfies $(k_i-1)*a[i] < a[i+1]$ and $k_i*a[i]>a[i+1]$.\\
+At this point for a change problem like $k_i*a[i]$, we can use $a[i+1] + k_{i-1}*a[i-1] + ... + k_0*a[0]$ instead, and the number of sheets cannot be greater than $k_i$.\\
+
+Briefly.
+
+If the greedy algorithm is satisfied when the adjacent currencies are multiplicative
+$$
+a[i]*n = a[i+1]
+$$
+
+If the adjacent currencies do not satisfy the multiplicative relationship, then
+
+$$
+k_ia[i] = a[i+1] + k_{i-1}a[i-1] + ... + k_0a[0]
+$$
+
+and $k_i$ satisfies
+
+$$
+k_i >= 1+ k_{i-1}+... +k_0
+$$
+\end{document}
+

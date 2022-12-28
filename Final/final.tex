@@ -1,0 +1,219 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\lstset{
+  basicstyle=\footnotesize,
+  numbers=left, 
+  stepnumber=1, 
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=single,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+}
+
+\usepackage{pgfplots}
+
+\usepackage{algorithm}  
+\usepackage{algorithmicx}  
+\usepackage{algpseudocode}  
+\usepackage{amsmath}  
+\usepackage{amssymb}
+  
+\floatname{algorithm}{algorithm}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}  
+\renewcommand{\algorithmicensure}{\textbf{Output:}}  
+
+\newenvironment{breakablealgorithm}
+{% \begin{breakablealgorithm}
+	\begin{center}
+		\refstepcounter{algorithm}% New algorithm
+		\hrule height.8pt depth0pt \kern2pt% \@fs@pre for \@fs@ruled
+		\renewcommand{\caption}[2][\relax]{% Make a new \caption
+			{\raggedright\textbf{\ALG@name~\thealgorithm} ##2\par}%
+			\ifx\relax##1\relax % #1 is \relax
+			\addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+			\else % #1 is not \relax
+			\addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+			\fi
+			\kern2pt\hrule\kern2pt
+		}
+	}{% \end{breakablealgorithm}
+		\kern2pt\hrule\relax% \@fs@post for \@fs@ruled
+	\end{center}
+}
+
+\title{AOA Final}
+\author{Name: Shiyin Lin \\UFID: 49619012}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Dynamic programming}
+\subsection{Pseudo-code}
+\begin{algorithm}
+    \caption{Knapsack}
+    \begin{algorithmic}[1] 
+        \Require $int$ item, $Array$ weight, $Array$ time, $Array$ value, $int$ W, $int$ T
+        \Ensure $int$ maxValue, $Array$ select
+        \Function{Knapsack}{$int$, $Array$, $Array$, $Array$, $int$, $int$}
+            \State Init dp Array // n * w * t
+            \For{$i$ = 1; $i$ \textless $item+1$; $i++$}
+                \For {$j$ = 1; $j$ \textless $W+1$; $j++$}
+                    \For{$k$ = 1; $k$ \textless $T+1$; $k++$}
+                        \If {$j - weight[i-1] \geq$ and $k - time[i-1] \geq 0$}
+                            \State nochange = dp[i - 1][j][k]
+                            \State change = dp[i-1][j-weight[i-1]][k-time[i-1]] + value[i-1]
+                            \If {nochange \textgreater change}
+                                \State select[i] = 0
+                                \State [i][j][k] = nochange
+                            \Else
+                                \State select[i] = 1
+                                \State dp[i][j][k] = change
+                            \EndIf
+                        \Else:
+                            \State dp[i][j][k] = dp[i-1][j][k]
+                            \State select[i] = 0
+                        \EndIf
+                    \EndFor
+                \EndFor
+            \EndFor
+            \State \Return{dp[-1][-1][-1], select}
+        \EndFunction
+    \end{algorithmic}  
+\end{algorithm} 
+\clearpage
+\subsection{Proof of Correctness}
+Proof of correctness of the algorithm by induction\\
+First, dp[0][j][k] = 0, which means that when there are no items, the maximum sum of values that can be obtained is 0, regardless of the pack limit and the time.
+Second, suppose we have correctly computed the maximum sum of values for any of the i - 1 items at any of the backpack capacities and at any of the times, i.e., for all dp[i - 1].\\
+Then according to the state transfer equation
+$$
+dp[i][j][k] = max(dp[i - 1][j][k], dp[i-1][j - weight[i-1]][k - time[i-1]] + value[i-1]
+$$
+We can correctly derive the values from dp[1] to all values in dp[i].\\
+Thus we prove the correctness of the algorithm.
+
+\subsection{Algorithm's running time}
+In the knapsack problem, we facilitate a three-dimensional dp array, let the number of items be n, the capacity of the knapsack be w, and the available time be t. The time complexity of the code is O(nwt)
+\clearpage
+
+\section{Network flow}
+\subsection{Pseudo-code}
+\begin{breakablealgorithm}
+    \caption{DINIC\_MIN\_CUT}
+    \begin{algorithmic}[1] 
+        \Require $vertex$ S, T, $Array$ g, $Array$ cap
+        \Ensure $int$\ min-cut
+        \Function{BFS}{ }
+            \State dic, q = dict, deque[S]
+            \State dic[S] = 0
+            \While{q}
+                \State node = q.popleft()
+                \For{next in g[node]}
+                    \If{dic[next]==-1 and cap[node, next]\textgreater 0}
+                        \State dic[next] = dic[node]+1
+                        \If{next == -1}
+                            \State \Return{dic}
+                        \EndIf
+                        \State q.append(next)
+                    \EndIf
+                \EndFor
+            \EndWhile
+            \State \Return{dic}
+        \EndFunction
+        \State
+        \Function{DFS}{node, flow, dic}
+            \State origin = flow
+            \For{next in g[node]}
+                \If{dic[next]==dic[node]+1 and cap[node, next] \textgreater 0}
+                    \State a = \Call{DFS}{next, min(origin, cap[node, next, dic]}
+                    \If{a}
+                        \State cap[node, next] -= a
+                        \State cap[next, node] += a
+                        \If{cap[next, node] \textgreater 0}
+                            \State g[next].append(node)
+                        \EndIf
+                        \State origin -= a
+                        \If{origin == 0}
+                            \State \Return{flow}
+                        \EndIf
+                    \EndIf
+                \EndIf
+            \EndFor
+            \State \Return{flow - origin}
+        \EndFunction
+        \State
+        \Function{DINIC}{ }
+            \State ans = 0
+            \While{ans \textless inf}
+                \State dic = bfs()
+                \If {dic[-1] == -1}
+                    \State break
+                \EndIf
+                \State ans += dfs(src, inf)
+            \EndWhile
+            \State \Return{ans}
+        \EndFunction
+
+        
+    \end{algorithmic}  
+\end{breakablealgorithm} 
+
+\subsection{Proof of Correctness}
+Let $f_i$ denote residual graph after iteration $i (G_{f_0} = G)$\\
+depth($G_{f_0}$ = length of the shortest path from s to t\\
+depth($G_{f{i+1}}$) \textgreater depth($G_{f_i}$)\\
+Support that depth($G_{f_{i+1}}$) \leq depth($G_{f_i}$)\\
+The $G_{f_{i+1}}$ contains an s-t path of length \leq depth($G_{f_i}$)\\
+This path corresponds to an augmenting path for the flow
+$$
+f' = f_{i+1} - f_i in G_{f_i}
+$$
+But since the augmenting path has length depth($G_{f_i}$) it is also an augmenting path in the level graph\\
+Contradiction\\
+So Dinic Algorithm can obtain the max flow. By max-flow min-cut theorem we can know that max-flow is the same as min-cut, so we get min-cut.
+
+\subsection{Algorithm's running time}\\
+Building a Level graph with BFS takes O(E) time. Obtaining a blocked flow requires O(VE) time. The outer loop takes O(V) time to complete. We create a new Level graph and detect the blocked flow in each iteration. It can be seen that the number of layers increases by at least one in each repetition. As a result, the outer loop takes O(V) time to complete. As a result, the time complexity is $O(EV^2)$. The complexity of the Ford-Fulkerson method O(Ef), where f is the maximum flow of the network, is substantially lower when the maximum flow is large.
+\clearpage
+\section{Complexity}
+To prove that the problem is NP-complete, we first need to prove the following two points:\\
+1. The problem itself is NP \\
+2. All other problems in NP class can be polynomial-time reducible to that.\\
+
+NP\\
+Given a certificate that defines the set of numbers as $S$ and divides the partition defined as $A_1, A_2. . A_n$, We can complete the certifications according to the following:\\
+For each element $x$ in $A_1, A_2...A_n$, verify that all of them belong to $S$.\\
+Let $S_1$ be the sum of $A_1$, and $S_2$ to $S_n$ similarly be the subset sum of all subsets of $A_2$ to $A_n$\\
+Verify that $S_1, S_2..S_n$ are the same.\\
+It can be easily proved in linear time, so we can proof that problem is NP
+
+NP-Hard\\
+Assuming that we divide the array into two subsets(A, A').\\
+Assume a array $T$ with sum equal to $t$. Then the remaining elements in $S$ (assume $O$) will have subsum $o = s - t$. Assuming that the original array is equal to $T' = T \cup (s - 2t)$ with sum equal to t', we can conclude the following:
+\begin{equation*}
+\begin{aligned}
+o =& s – t \\
+o – t =& s – 2t \\
+t' =& t + (s – 2t) \\
+=& s – t \\
+=& o \\
+\end{aligned}
+\end{equation*}
+The original array $S$ is partitioned into two subsets and the sum of each subset is $(s - t)$ satisfying the assumption.\\
+Denote the partition containing {s - 2t} as A'. Let A = A'-{s-2t}. Then the sum of the elements in A is.
+$$
+A = s – t – {s – 2t} = t
+$$
+So the problem can be reduced to Subset-Sum problem.\\
+
+The problem satisfies the above two points, so the problem is NP-complete
+\end{document}
+
